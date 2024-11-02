@@ -12,16 +12,11 @@ class ImageIterator:
         :return: list of filenames in this directory
         """
         images = []
-        try:
-            with open(self.annotation_file, 'r') as file:
-                reader = csv.reader(file)
-                next(reader)  # Пропускаем заголовок
-                for row in reader:
-                    images.append(tuple(row))
-        except FileNotFoundError:
-            print(f"Ошибка: Файл {self.annotation_file} не найден.")
-        except Exception as e:
-            print(f"Ошибка при загрузке изображений: {e}")
+        with open(self.annotation_file, 'r') as file:
+            reader = csv.reader(file)
+            next(reader)  # Пропускаем заголовок
+            for row in reader:
+                images.append(tuple(row))
         return images
 
     def __iter__(self) -> iter:
