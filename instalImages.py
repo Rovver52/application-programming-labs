@@ -1,4 +1,5 @@
 import os
+
 from icrawler.builtin import GoogleImageCrawler
 
 def install_images(keyword: str, imgdir: str, num: int) -> None:
