@@ -42,6 +42,7 @@ def plot_histogram(image: np.ndarray) -> None:
         plt.plot(hist, color=col)
         plt.xlim([0, 256])
 
+def print_histogram() -> None:
     plt.title('Гистограмма изображения')
     plt.xlabel('Интенсивность цвета')
     plt.ylabel('Частота')
@@ -79,7 +80,6 @@ def display_images(original_image: np.ndarray, inverted_image: np.ndarray) -> No
     plt.imshow(cv2.cvtColor(inverted_image, cv2.COLOR_BGR2RGB))
     plt.title('Инвертированное изображение')
     plt.axis('off')
-
     plt.show()
 
 
@@ -91,4 +91,3 @@ def save_image(output_image_path: str, image: np.ndarray) -> None:
     :param image: Изображение в формате массива NumPy.
     """
     cv2.imwrite(output_image_path, image)
-    print(f"Инвертированное изображение сохранено по пути: {output_image_path}")
