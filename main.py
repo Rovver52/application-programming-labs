@@ -18,8 +18,8 @@ def main() -> None:
 
         image = load_image(input_image_path)
         print_image_size(image)
-        plot_histogram(image)
-        print_histogram()
+        hist = plot_histogram(image)
+        print_histogram(hist)
         inverted_image = invert_colors(image)
         display_images(image, inverted_image)
         save_image(output_image_path, inverted_image)
