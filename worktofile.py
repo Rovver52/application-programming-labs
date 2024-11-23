@@ -28,24 +28,39 @@ def print_image_size(image: np.ndarray) -> None:
     print(f"Размер изображения: {width}x{height} (ширина x высота)")
 
 
-def plot_histogram(image: np.ndarray) -> None:
+def plot_histogram(image: np.ndarray) -> list:
     """
-    Строит гистограмму цветового распределения изображения.
+    Вычисляет гистограмму цветового распределения изображения.
 
     :param image: Изображение в формате массива NumPy.
+    :return: Список гистограмм для каждого цветового канала.
+    """
+    histograms = []
+    color = ('b', 'g', 'r')  # цвета для гистограммы
+
+    for i in range(3):  # Для каждого цветового канала
+        hist = cv2.calcHist([image], [i], None, [256], [0, 256])
+        histograms.append(hist)
+
+    return histograms
+
+
+def print_histogram(histograms: list) -> None:
+    """
+    Строит и отображает гистограмму цветового распределения.
+
+    :param histograms: Список гистограмм для каждого цветового канала.
     """
     color = ('b', 'g', 'r')  # цвета для гистограммы
     plt.figure(figsize=(10, 5))
 
     for i, col in enumerate(color):
-        hist = cv2.calcHist([image], [i], None, [256], [0, 256])
-        plt.plot(hist, color=col)
-        plt.xlim([0, 256])
+        plt.plot(histograms[i], color=col)
 
-def print_histogram() -> None:
     plt.title('Гистограмма изображения')
     plt.xlabel('Интенсивность цвета')
     plt.ylabel('Частота')
+    plt.xlim([0, 256])
     plt.grid()
     plt.show()
 
