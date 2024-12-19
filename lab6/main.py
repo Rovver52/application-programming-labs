@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
         if self.iterator is not None:
             try:
                 image_data = self.iterator.next()
-                image_path = image_data[0]  # Предполагаем, что путь к изображению в первом столбце
+                image_path = image_data[0]
                 if os.path.exists(image_path):
                     pixmap = QPixmap(image_path)
                     self.image_label.setPixmap(pixmap.scaled(800, 600, Qt.KeepAspectRatio))
