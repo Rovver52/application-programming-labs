@@ -57,7 +57,6 @@ class MainWindow(QMainWindow):
         if self.iterator is not None:
             try:
                 image_info = next(self.iterator)
-                # Предполагаем, что путь к изображению находится в первом элементе кортежа
                 self.current_image_path = image_info[0]
                 pixmap = QPixmap(self.current_image_path)
                 self.image_label.setPixmap(pixmap.scaled(self.image_label.size(), Qt.KeepAspectRatio))
