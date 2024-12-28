@@ -1,26 +1,17 @@
 import argparse
+import cv2
 import pandas as pd
-import matplotlib.pyplot as plt
-from PIL import Image
-from typing import Tuple, Optional
+from matplotlib import pyplot as plt
 
 
-def get_image_size(image_path: str) -> Tuple[Optional[int], Optional[int], Optional[int]]:
+def calculate_statistics(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Получает размеры изображения (высота, ширина, глубина) по заданному пути.
+    Вычисляет статистическую информацию о размерах изображений.
 
-    :param image_path: Путь к изображению.
-    :return: Кортеж с высотой, шириной и глубиной изображения или (None, None, None) в случае ошибки.
+    :param df: DataFrame с размерами изображений.
+    :return: DataFrame со статистикой.
     """
-    try:
-        with Image.open(image_path) as img:
-            width, height = img.size
-            depth = len(img.getbands())  # Количество каналов
-        return height, width, depth
-    except Exception as e:
-        print(f"Ошибка при обработке изображения {image_path}: {e}")
-        return None, None, None
-
+    return df[['height', 'width', 'depth']].describe()
 
 def filter_images(df: pd.DataFrame, max_width: int, max_height: int) -> pd.DataFrame:
     """
@@ -33,15 +24,29 @@ def filter_images(df: pd.DataFrame, max_width: int, max_height: int) -> pd.DataF
     """
     return df[(df['height'] <= max_height) & (df['width'] <= max_width)]
 
-
-def calculate_statistics(df: pd.DataFrame) -> pd.DataFrame:
+def get_image_size(image_path: str) -> Tuple[Optional[int], Optional[int], Optional[int]]:
     """
-    Вычисляет статистическую информацию о размерах изображений.
+    Получает размеры изображения (высота, ширина, глубина) по заданному пути.
 
-    :param df: DataFrame с размерами изображений.
-    :return: DataFrame со статистикой.
+    :param image_path: Путь к изображению.
+    :return: Кортеж с высотой, шириной и глубиной изображения или (None, None, None) в случае ошибки.
     """
-    return df[['height', 'width', 'depth']].describe()
+    img = cv2.imread(image_path)
+    if img is None:
+        raise ValueError(f"Ошибка: Не удалось загрузить изображение по пути: {image_path}")
+
+    height, width = img.shape[:2]
+    depth = img.shape[2] if len(img.shape) > 2 else 1  # Глубина (количество каналов)
+    return height, width, depth
+
+def load_annotations(annotation_file: str) -> pd.DataFrame:
+    """
+    Загружает аннотации из CSV файла.
+
+    :param annotation_file: Путь к CSV файлу с аннотациями.
+    :return: DataFrame с аннотациями.
+    """
+    return pd.read_csv(annotation_file, header=0, names=['absolute_path', 'relative_path'])
 
 
 def plot_area_distribution(df: pd.DataFrame) -> None:
@@ -57,6 +62,23 @@ def plot_area_distribution(df: pd.DataFrame) -> None:
     plt.ylabel('Количество изображений')
     plt.grid(axis='y', alpha=0.75)
     plt.show()
+    
+    
+def update_image_sizes(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Обновляет DataFrame с размерами изображений.
+
+    :param df: DataFrame с аннотациями изображений.
+    :return: Обновленный DataFrame с размерами изображений.
+    """
+    sizes = df['absolute_path'].apply(get_image_size)
+    sizes = sizes.dropna()  # Удаление строк с ошибками
+    df[['height', 'width', 'depth']] = pd.DataFrame(sizes.tolist(), index=sizes.index)
+
+    # Создание нового столбца для площади изображения
+    df['area'] = df['height'] * df['width']
+
+    return df
 
 
 def main() -> None:
@@ -69,38 +91,26 @@ def main() -> None:
     parser.add_argument('max_height', type=int, help='Максимальная высота для фильтрации')
 
     args = parser.parse_args()
+    try:
+        df = load_annotations(args.annotation_file)
 
-    annotation_file, max_width, max_height = args.annotation_file, args.max_width, args.max_height
+        df = update_image_sizes(df)
 
-    df = pd.read_csv(annotation_file, header = 0, names=['absolute_path', 'relative_path'])
+        stats = calculate_statistics(df)
+        print("Статистическая информация о размерах изображений:")
+        print(stats)
 
-    # Применение функции к каждому изображению в DataFrame
-    sizes = df['absolute_path'].apply(get_image_size)
-    sizes = sizes.dropna()  # Удаление строк с ошибками
+        filtered_df = filter_images(df, args.max_width, args.max_height)
+        print("\nОтфильтрованный DataFrame:")
+        print(filtered_df)
 
-    # Обновление DataFrame с полученными размерами
-    df[['height', 'width', 'depth']] = pd.DataFrame(sizes.tolist(), index=sizes.index)
+        df_sorted = df.sort_values(by='area')
+        print("\nОтсортированный DataFrame по площади изображений:")
+        print(df_sorted)
 
-    # Вычисление статистической информации
-    stats = calculate_statistics(df)
-    print("Статистическая информация о размерах изображений:")
-    print(stats)
-
-    # Фильтрация изображений по заданным максимальным размерам
-    filtered_df = filter_images(df, max_width, max_height)
-    print("\nОтфильтрованный DataFrame:")
-    print(filtered_df)
-
-    # Создание нового столбца для площади изображения
-    df['area'] = df['height'] * df['width']
-
-    # Сортировка DataFrame по площади изображений
-    df_sorted = df.sort_values(by='area')
-    print("\nОтсортированный DataFrame по площади изображений:")
-    print(df_sorted)
-
-    # Построение гистограммы распределения площадей изображений
-    plot_area_distribution(df_sorted)
+        plot_area_distribution(df_sorted)
+    except Exception as e:
+        print(f"Что-то пошло не так {e}")
 
 
 if __name__ == "__main__":
